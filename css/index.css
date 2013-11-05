@@ -58,7 +58,12 @@ body {
     margin:-115px 0px 0px -112px;  /* offset vertical: half of image height and text area height */
                                    /* offset horizontal: half of text area width */
 }
-
+.zdy_buttom{
+	position: absolute;
+	width:100%;
+    bottom: 10px;
+    font-size:30px;
+}
 /* Landscape layout (with min-width) */
 @media screen and (min-aspect-ratio: 1/1) and (min-width:400px) {
     .app {

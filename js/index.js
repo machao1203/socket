@@ -20,6 +20,7 @@ var RecvArray = new Array(4098);
 //各项为string
 var PollTimer;
 var Recv_length;
+var socket_statue = false;
 var app = {
 	// Application Constructor
 	initialize : function() {
@@ -45,11 +46,13 @@ var socketconnect = function() {
 	console.log('socket init^^^^^^^^^^^^^^^^^^^^');
 	document.getElementById("connect_flag").innerText = "connecting...";
 	var successback = function() {
-		document.getElementById("connect_flag").innerText = "connect";
+		socket_statue = true;
+		document.getElementById("connect_flag").innerText = "已连接";
 		PollTimer = self.setInterval("socketpoll()", 1000);
 	};
 	var errorback = function(msg) {
-		document.getElementById("connect_flag").innerText = "error";
+		socket_statue = false;
+		document.getElementById("connect_flag").innerText = "连接失败";
 	};
 	chrome.socket.socket_connect(successback, errorback);
 
@@ -119,53 +122,18 @@ var StrToBytes = function(msg, curArray) {
 	return strmsg;
 };
 var handletest = function() {
-	var testmsg = "7F06BE010684F03F03";
+	//var testmsg = "7F12BF01C0660C293410883211006008002000D29D";
+	var testmsg = "7F58DED5010011E33F51000024301731101318010071000000000000000000000000FFFFA5C5B4B0A8CBF0BBFBCFE3B23031A5C22337040004FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF71000118049D";
 	console.log(testmsg);
 	var test = StrToBytes(testmsg, RecvArray);
 	Recv_length = testmsg.length / 2;
 	recv_handle();
 };
-
-function onFileSystemSuccess(fileSystem) {
-	fileSystem.root.getFile("readme.txt", {
-		create : true,
-		exclusive : false
-	}, gotFileEntry, fail);
-}
-
-function gotFileEntry(fileEntry) {
-	fileEntry.file(gotFile, fail);
-}
-
-function fail(evt) {
-	console.log(evt.target.error);
-}
-
-function gotFile(file) {
-	readDataUrl(file);
-	readAsText(file);
-}
-
-function readDataUrl(file) {
-	var reader = new FileReader();
-	reader.onloadend = function(evt) {
-		console.log("Read as data URL");
-		console.log(evt.target.result);
-	};
-	reader.readAsDataURL(file);
-}
-
-function readAsText(file) {
-	var reader = new FileReader();
-	reader.onloadend = function(evt) {
-		console.log("Read as text");
-		var sss = evt.target.result;
-		console.log(sss);
-	};
-	reader.readAsText(file);
-}
-
-var filetest = function() {
-	window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, onFileSystemSuccess, fail);
+var set_baowen = function() {
+	var status = $("#baowen_show").val();
+	if (status == "on") {
+		$("#main_baowen").show();
+	} else {
+		$("#main_baowen").hide();
+	}
 };
-
