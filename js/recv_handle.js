@@ -1,53 +1,67 @@
-/* */
-	/***************** Ω” ‹÷°–≈œ¢ *******************************/
-	var curRecvSer;
-	var Recv_HEAD;
-	var Recv_LEN = new Array(2);
-	var Recv_CTR = new Array(2);
-	var Recv_MMADR = new Array(1);
-	var Recv_MA = new Array(24);
-	var Recv_SA = new Array(24);
-	var Recv_SER = new Array(1);
-	var Recv_DI = new Array(10);
-	var Recv_DATA = new Array(256);
-	var Recv_FCS = new Array(2);
-	var Recv_LLC_CTR = new Array(2);
-	var Recv_LLC_SA = new Array(24);
-	var Recv_LLC_SER = new Array(1);
-	var Recv_LLC_DI = new Array(10);
-	var Recv_LLC_DATA = new Array(100);
-	var Recv_LEN_length;
-	var Recv_CTR_length;
-	var Recv_MMADR_length;
-	var Recv_MA_length;
-	var Recv_SA_length;
-	var Recv_DI_length;
-	var Recv_DATA_length;
-	var Recv_LLC_CTR_length;
-	var Recv_LLC_SA_length;
-	var Recv_LLC_DI_length;
-	var Recv_LLC_DATA_length;
-	var IsLLCDATA = false;
-	var Recv_error = false;
-	var IsExtend;
-	/*******************************************************/
-    var receive_length = 0; //  ’µΩ÷°≥§(∞¸¿®Õ∑∫ÕCRC)
-    var Recv_length;
-    var curFrmLen; //Ω” ’µΩµƒ◊÷Ω⁄ ˝
-    var Rmsg,Rmsg_baowen;
-//µ±«∞÷°≥§∂»£®»•–£—È¬Î∫Õ÷°Õ∑£©
+Ôªø/* */
+/***************** Êé•ÂèóÂ∏ß‰ø°ÊÅØ *******************************/
+var curRecvSer;
+var Recv_HEAD;
+var Recv_LEN = new Array(2);
+var Recv_CTR = new Array(2);
+var Recv_MMADR = new Array(1);
+var Recv_MA = new Array(24);
+var Recv_SA = new Array(24);
+var Recv_SER = new Array(1);
+var Recv_DI = new Array(10);
+var Recv_DATA = new Array(256);
+var Recv_FCS = new Array(2);
+var Recv_LLC_CTR = new Array(2);
+var Recv_LLC_SA = new Array(24);
+var Recv_LLC_SER = new Array(1);
+var Recv_LLC_DI = new Array(10);
+var Recv_LLC_DATA = new Array(100);
+var Recv_LEN_length;
+var Recv_CTR_length;
+var Recv_MMADR_length;
+var Recv_MA_length;
+var Recv_SA_length;
+var Recv_DI_length;
+var Recv_DATA_length;
+var Recv_LLC_CTR_length;
+var Recv_LLC_SA_length;
+var Recv_LLC_DI_length;
+var Recv_LLC_DATA_length;
+var IsLLCDATA = false;
+var Recv_error = false;
+var IsExtend;
+/*******************************************************/
+var receive_length = 0;
+// Êî∂Âà∞Â∏ßÈïø(ÂåÖÊã¨Â§¥ÂíåCRC)
+var Recv_length;
+var curFrmLen;
+//Êé•Êî∂Âà∞ÁöÑÂ≠óËäÇÊï∞
+var Rmsg, Rmsg_baowen;
+//ÂΩìÂâçÂ∏ßÈïøÂ∫¶ÔºàÂéªÊ†°È™åÁ†ÅÂíåÂ∏ßÂ§¥Ôºâ
 var stTxRecv_pos = -1;
 var precv = new Array(512);
+/////////////////////////////////////////////////////////
+function _EventRecord()
+{
+	this.recordtype;
+	this.time;
+	this.uc;
+	this.cc;
+	this.eventtype;
+	this.effectivelen;
+	this.effectivedata;
+}
+/////////////////////////////////////////////////////////
 var recv_handle = function() {
 	var data;
-	for (var i = 0;i < Recv_length;i++) {
+	for (var i = 0; i < Recv_length; i++) {
 		data = parseInt(RecvArray[i], 16);
 		if (stTxRecv_pos === -1) {
 			if (data === 0x7F) {
 				stTxRecv_pos = 0;
 				precv[0] = data;
 				precv[1] = 0xFF;
-				// ¡Ÿ ±∏≥≥§∂»
+				// ‰∏¥Êó∂ËµãÈïøÂ∫¶
 				precv[2] = 0xFF;
 				stTxRecv_recvPos = 1;
 			}
@@ -66,7 +80,7 @@ var recv_handle = function() {
 					console.log("crc error");
 					return;
 				}
-				console.log("crc right");
+
 				stTxRecv_recvPos = 0;
 				stTxRecv_pos = -1;
 				AfterNewFrameRecv();
@@ -77,170 +91,174 @@ var recv_handle = function() {
 
 	}
 };
-var AfterNewFrameRecv = function(){
+var AfterNewFrameRecv = function() {
 	init_Recv();
-	GetFrameInfoFromRecvBuffer(); // ∏˘æ›Ω” ’÷°ƒ⁄»›ªÒ»°∏˜œÓ–≈œ¢
+	GetFrameInfoFromRecvBuffer();
+	// Ê†πÊçÆÊé•Êî∂Â∏ßÂÜÖÂÆπËé∑ÂèñÂêÑÈ°π‰ø°ÊÅØ
+	AnalyseRecvMsgByDIType();
+	//ÈÄöËøáDIÁ±ªÂûãËøõË°åÂÖ∑‰ΩìÁöÑÊãÜÂ∏ßÂàÜÊûê
 	show_recvMessage();
 };
-var init_Recv = function(){
+var init_Recv = function() {
 
-		Recv_HEAD = 0;
-		for (var i = 0; i < 2; i++) {
-			Recv_LEN[i] = 0;
-			Recv_FCS[i] = 0;
-			Recv_CTR[i] = 0;
-			Recv_LLC_CTR[i] = 0;
-		}
-		for (var i = 0; i < 10; i++) {
-			Recv_LLC_DI[i] = 0;
-			Recv_DI[i] = 0;
-		}
-		for (var i = 0; i < 24; i++) {
-			Recv_MA[i] = 0;
-			Recv_SA[i] = 0;
-			Recv_LLC_SA[i] = 0;
-		}
-		for (var i = 0; i < 256; i++) {
-			Recv_DATA[i] = 0;
-		}
-		for (var i = 0; i < 100; i++) {
-			Recv_LLC_DATA[i] = 0;
-		}
-		Recv_MMADR[0] = 0;
-		Recv_LEN_length = 0;
-		Recv_CTR_length = 0;
-		Recv_MMADR_length = 0;
-		Recv_MA_length = 0;
-		Recv_SA_length = 0;
-		Recv_DI_length = 0;
-		Recv_DATA_length = 0;
-		next_flag = 0;
-		Recv_error = false;
-		IsPollRecvCmd = false;
-		Recv_LLC_CTR_length = 0;
-		Recv_LLC_SA_length = 0;
-		Recv_LLC_DI_length = 0;
-		Recv_LLC_DATA_length = 0;
-		IsLLCDATA = false;
+	Recv_HEAD = 0;
+	for (var i = 0; i < 2; i++) {
+		Recv_LEN[i] = 0;
+		Recv_FCS[i] = 0;
+		Recv_CTR[i] = 0;
+		Recv_LLC_CTR[i] = 0;
+	}
+	for (var i = 0; i < 10; i++) {
+		Recv_LLC_DI[i] = 0;
+		Recv_DI[i] = 0;
+	}
+	for (var i = 0; i < 24; i++) {
+		Recv_MA[i] = 0;
+		Recv_SA[i] = 0;
+		Recv_LLC_SA[i] = 0;
+	}
+	for (var i = 0; i < 256; i++) {
+		Recv_DATA[i] = 0;
+	}
+	for (var i = 0; i < 100; i++) {
+		Recv_LLC_DATA[i] = 0;
+	}
+	Recv_MMADR[0] = 0;
+	Recv_LEN_length = 0;
+	Recv_CTR_length = 0;
+	Recv_MMADR_length = 0;
+	Recv_MA_length = 0;
+	Recv_SA_length = 0;
+	Recv_DI_length = 0;
+	Recv_DATA_length = 0;
+	next_flag = 0;
+	Recv_error = false;
+	IsPollRecvCmd = false;
+	Recv_LLC_CTR_length = 0;
+	Recv_LLC_SA_length = 0;
+	Recv_LLC_DI_length = 0;
+	Recv_LLC_DATA_length = 0;
+	IsLLCDATA = false;
 };
-var GetFrameInfoFromRecvBuffer = function(){
-	    var curBufferPos = 0;
-		Recv_HEAD = precv[curBufferPos];
-		curBufferPos++;
-		// ªÒ»° ˝æ›÷°≥§∂»–≈œ¢º∞’˚÷° ˝æ›≥§∂»
-		curBufferPos = GetLengthInfoFromRecvBuffer(curBufferPos);
-		// ªÒ»° ˝æ›÷°CTR–≈œ¢º∞MMADR°¢MA°¢SA–≈œ¢
-		curBufferPos = GetCTRInfoFromRecvBuffer(curBufferPos);
-		// ÷°–Ú∫≈
-		Recv_SER[0] = precv[curBufferPos];
-		curRecvSer = Recv_SER[0];
-		curBufferPos++;
-		// ∏˘æ›DIªÒ»°DI≥§∂»–≈œ¢
-		curBufferPos = GetDIInfoFromRecvBuffer(curBufferPos);
-		// ªÒ»° ˝æ›”Ú≥§∂»º∞ ˝æ›”Úƒ⁄»›
-		curBufferPos = GetDATAInfoFromRecvBuffer(curBufferPos);
-		// ÷°–£—È¬Î
-		Recv_FCS[0] = precv[curBufferPos++];
-		Recv_FCS[1] = precv[curBufferPos++];
-		
-		// ªÒ»°LLC√¸¡Ó÷–µƒ ˝æ›∏Ò Ω
-		GetLLCFrameDATAFromFrameDATA();
+var GetFrameInfoFromRecvBuffer = function() {
+	var curBufferPos = 0;
+	Recv_HEAD = precv[curBufferPos];
+	curBufferPos++;
+	// Ëé∑ÂèñÊï∞ÊçÆÂ∏ßÈïøÂ∫¶‰ø°ÊÅØÂèäÊï¥Â∏ßÊï∞ÊçÆÈïøÂ∫¶
+	curBufferPos = GetLengthInfoFromRecvBuffer(curBufferPos);
+	// Ëé∑ÂèñÊï∞ÊçÆÂ∏ßCTR‰ø°ÊÅØÂèäMMADR„ÄÅMA„ÄÅSA‰ø°ÊÅØ
+	curBufferPos = GetCTRInfoFromRecvBuffer(curBufferPos);
+	// Â∏ßÂ∫èÂè∑
+	Recv_SER[0] = precv[curBufferPos];
+	curRecvSer = Recv_SER[0];
+	curBufferPos++;
+	// Ê†πÊçÆDIËé∑ÂèñDIÈïøÂ∫¶‰ø°ÊÅØ
+	curBufferPos = GetDIInfoFromRecvBuffer(curBufferPos);
+	// Ëé∑ÂèñÊï∞ÊçÆÂüüÈïøÂ∫¶ÂèäÊï∞ÊçÆÂüüÂÜÖÂÆπ
+	curBufferPos = GetDATAInfoFromRecvBuffer(curBufferPos);
+	// Â∏ßÊ†°È™åÁ†Å
+	Recv_FCS[0] = precv[curBufferPos++];
+	Recv_FCS[1] = precv[curBufferPos++];
+
+	// Ëé∑ÂèñLLCÂëΩ‰ª§‰∏≠ÁöÑÊï∞ÊçÆÊ†ºÂºè
+	GetLLCFrameDATAFromFrameDATA();
 };
-var GetLengthInfoFromRecvBuffer = function(curBufferPos){
-	    var curBufferi;
-		var curOffSetPos = 0;
+var GetLengthInfoFromRecvBuffer = function(curBufferPos) {
+	var curBufferi;
+	var curOffSetPos = 0;
+	curBufferi = precv[curBufferPos + curOffSetPos];
+	curOffSetPos++;
+	if ((curBufferi & 0x80) != 0) {
+		curOffSetPos++;
+		IsExtend = true;
+	}
+	Recv_LEN_length = curOffSetPos;
+	for (var i = 0; i < curOffSetPos; i++) {
+		Recv_LEN[i] = precv[curBufferPos + i];
+	}
+	curBufferPos += curOffSetPos;
+
+	// Á°ÆËÆ§Êé•Êî∂Â∏ßÈïøÂ∫¶
+	if (IsExtend) {
+		receive_length = Recv_LEN[0] & 0x7F;
+		receive_length += Recv_LEN[1] * 0x7F;
+		receive_length += 3;
+		// CSÈïøÂ∫¶(2‰∏™Â≠óËäÇ)+Head
+	} else {
+		receive_length = Recv_LEN[0] & 0x7F;
+		receive_length += 3;
+		// CSÈïøÂ∫¶(2‰∏™Â≠óËäÇ)+Head
+	}
+	return curBufferPos;
+};
+var GetCTRInfoFromRecvBuffer = function(curBufferPos) {
+	var curBufferi;
+	var curOffSetPos = 0;
+	var tempSANum = 0;
+	do {
 		curBufferi = precv[curBufferPos + curOffSetPos];
 		curOffSetPos++;
-		if ((curBufferi & 0x80) != 0) {
-			curOffSetPos++;
-			IsExtend = true;
-		}
-		Recv_LEN_length = curOffSetPos;
-		for (var i = 0; i < curOffSetPos; i++) {
-			Recv_LEN[i] = precv[curBufferPos + i];
-		}
-		curBufferPos += curOffSetPos;
-
-		// »∑»œΩ” ’÷°≥§∂»
-		if (IsExtend) {
-			receive_length = Recv_LEN[0] & 0x7F;
-			receive_length += Recv_LEN[1] * 0x7F;
-			receive_length += 3; // CS≥§∂»(2∏ˆ◊÷Ω⁄)+Head
+	} while ((curBufferi & 0x80) == 0);
+	// CTRÈïøÂ∫¶Á°ÆËÆ§
+	Recv_CTR_length = curOffSetPos;
+	for (var i = 0; i < curOffSetPos; i++) {
+		Recv_CTR[i] = precv[curBufferPos + i];
+	}
+	curBufferPos += curOffSetPos;
+	curBufferi = Recv_CTR[0];
+	// Êó†Êâ©Â±ïÊéßÂà∂Á†ÅÊ†áËØÜ Êó†‰∏ªÁ´ôÂú∞ÂùÄ
+	if ((curBufferi & 0x80) != 0) {
+		Recv_MA_length = 0;
+	}
+	// ÊúâÊó†Â§öÁ∫ßÂú∞ÂùÄÊâ©Â±ï
+	if ((Recv_CTR[0] & 0x20) != 0) {
+		Recv_MMADR_length = 0;
+		tempSANum = 1;
+	} else {
+		Recv_MMADR_length = 1;
+		var curMMADR = precv[curBufferPos];
+		curBufferPos++;
+		Recv_MMADR[0] = curMMADR;
+		var tempMMADRH = ((curMMADR & 0x70) / 0x10);
+		var tempMMADRL = (curMMADR & 0x07);
+		if (tempMMADRL >= tempMMADRH) {
+			tempSANum = 0x07 - tempMMADRL + 1;
 		} else {
-			receive_length = Recv_LEN[0] & 0x7F;
-			receive_length += 3; // CS≥§∂»(2∏ˆ◊÷Ω⁄)+Head
-		}
-		return curBufferPos;
-};
-var GetCTRInfoFromRecvBuffer = function(curBufferPos){
-	    var curBufferi;
-		var curOffSetPos = 0;
-		var tempSANum = 0;
-		do {
-			curBufferi = precv[curBufferPos + curOffSetPos];
-			curOffSetPos++;
-		} while ((curBufferi & 0x80) == 0);
-		// CTR≥§∂»»∑»œ
-		Recv_CTR_length = curOffSetPos;
-		for (var i = 0; i < curOffSetPos; i++) {
-			Recv_CTR[i] = precv[curBufferPos + i];
-		}
-		curBufferPos += curOffSetPos;
-		curBufferi = Recv_CTR[0];
-		// Œﬁ¿©’πøÿ÷∆¬Î±Í ∂ Œﬁ÷˜’æµÿ÷∑
-		if ((curBufferi & 0x80) != 0) {
-			Recv_MA_length = 0;
-		}
-		// ”–Œﬁ∂‡º∂µÿ÷∑¿©’π
-		if ((Recv_CTR[0] & 0x20) != 0) {
-			Recv_MMADR_length = 0;
 			tempSANum = 1;
-		} else {
-			Recv_MMADR_length = 1;
-			var curMMADR = precv[curBufferPos];
+		}
+	}
+	// Ê†πÊçÆÂú∞ÂùÄÊñπÂºèÂèäÂ§öÁ∫ßÂú∞ÂùÄÁ†ÅËé∑ÂèñSAÈïøÂ∫¶
+	Recv_SA_length = tempSANum * GetOneMAorSALen((Recv_CTR[0] & 0x07));
+	if (Recv_CTR_length > 1) {// ‰∏ªÁ´ôÂú∞ÂùÄÈïøÂ∫¶
+		curBufferi = Recv_CTR[1];
+		Recv_MA_length = GetOneMAorSALen((curBufferi & 0x07));
+	}
+	// ‰∏ªÁ´ôÂú∞ÂùÄ
+	if (Recv_MA_length > 0) {
+		for (var i = 0; i < Recv_MA_length; i++) {
+			curBufferi = precv[curBufferPos];
 			curBufferPos++;
-			Recv_MMADR[0] = curMMADR;
-			var tempMMADRH = ((curMMADR & 0x70) / 0x10);
-			var tempMMADRL = (curMMADR & 0x07);
-			if (tempMMADRL >= tempMMADRH) {
-				tempSANum = 0x07 - tempMMADRL + 1;
-			} else {
-				tempSANum = 1;
-			}
+			Recv_MA[i] = curBufferi;
 		}
-		// ∏˘æ›µÿ÷∑∑Ω Ωº∞∂‡º∂µÿ÷∑¬ÎªÒ»°SA≥§∂»
-		Recv_SA_length = tempSANum
-				* GetOneMAorSALen((Recv_CTR[0] & 0x07));
-		if (Recv_CTR_length > 1) { // ÷˜’æµÿ÷∑≥§∂»
-			curBufferi = Recv_CTR[1];
-			Recv_MA_length = GetOneMAorSALen((curBufferi & 0x07));
-		}
-		// ÷˜’æµÿ÷∑
-		if (Recv_MA_length > 0) {
-			for (var i = 0; i < Recv_MA_length; i++) {
+	}
+	// ‰ªéÁ´ôÂú∞ÂùÄ
+	if (Recv_SA_length > 0) {
+		for (var i = 0; i < Recv_SA_length; i++) {
+			if (curBufferPos < 100) {
 				curBufferi = precv[curBufferPos];
 				curBufferPos++;
-				Recv_MA[i] = curBufferi;
+				Recv_SA[i] = curBufferi;
 			}
 		}
-		// ¥”’æµÿ÷∑
-		if (Recv_SA_length > 0) {
-			for (var i = 0; i < Recv_SA_length; i++) {
-				if (curBufferPos < 100) {
-					curBufferi = precv[curBufferPos];
-					curBufferPos++;
-					Recv_SA[i] = curBufferi;
-				}
-			}
-		}
-		// msg = "CTR/MMADR/MA/SA" + Recv_CTR_length + Recv_MMADR_length
-		// + Recv_MA_length + Recv_SA_length;
-		return curBufferPos;
+	}
+	// msg = "CTR/MMADR/MA/SA" + Recv_CTR_length + Recv_MMADR_length
+	// + Recv_MA_length + Recv_SA_length;
+	return curBufferPos;
 };
 var GetOneMAorSALen = function(curCTRAddrType) {
-		// TODO Auto-generated method stub
-		var curAddrLen;
-		switch (curCTRAddrType) {
+	// TODO Auto-generated method stub
+	var curAddrLen;
+	switch (curCTRAddrType) {
 		case 0x07:
 			curAddrLen = 0;
 			break;
@@ -265,25 +283,27 @@ var GetOneMAorSALen = function(curCTRAddrType) {
 		default:
 			curAddrLen = 0;
 			break;
-		}
-		return curAddrLen;
+	}
+	return curAddrLen;
 };
-	// ∏˘æ›DIªÒ»°DI≥§∂»–≈œ¢
+// Ê†πÊçÆDIËé∑ÂèñDIÈïøÂ∫¶‰ø°ÊÅØ
 var GetDIInfoFromRecvBuffer = function(curBufferPos) {
-		// TODO Auto-generated method stub
-		var curBufferi;
-		var curOffSetPos = 0;
-		var curDIDataLen;
+	// TODO Auto-generated method stub
+	var curBufferi;
+	var curOffSetPos = 0;
+	var curDIDataLen;
+	curBufferi = precv[curBufferPos + curOffSetPos];
+	curOffSetPos++;
+	IsExtend = false;
+	if ((curBufferi & 0xC0) === 0xC0) {
 		curBufferi = precv[curBufferPos + curOffSetPos];
 		curOffSetPos++;
-		IsExtend = false;
-		if ((curBufferi & 0xC0) === 0xC0 ) {
-			curBufferi = precv[curBufferPos + curOffSetPos];
-			curOffSetPos++;
-			switch (curBufferi & 0xF0) {
+		switch (curBufferi & 0xF0) {
 
-			case 0x60: // ∂¡–¥UC CC 66 04
-			case 0x70: // ∂¡–¥UC CC 66 04
+			case 0x60:
+			// ËØªÂÜôUC CC 66 04
+			case 0x70:
+				// ËØªÂÜôUC CC 66 04
 				curBufferi = precv[curBufferPos + curOffSetPos];
 				curOffSetPos++;
 				break;
@@ -314,99 +334,104 @@ var GetDIInfoFromRecvBuffer = function(curBufferPos) {
 				Recv_DATA_length = curDIDataLen;
 				break;
 			case 0xA0:
-				curOffSetPos += 6; // øÈ ˝N°¢”––ß≥§∂»°¢◊÷Ω⁄ ˝
+				curOffSetPos += 6;
+				// ÂùóÊï∞N„ÄÅÊúâÊïàÈïøÂ∫¶„ÄÅÂ≠óËäÇÊï∞
 				break;
 			case 0xB0:
 				do {
 					curBufferi = precv[curBufferPos + curOffSetPos];
 					curOffSetPos++;
 				} while ((curBufferi & 0x80) != 0);
-				curOffSetPos += 6; // øÈ ˝N°¢”––ß≥§∂»°¢◊÷Ω⁄ ˝
+				curOffSetPos += 6;
+				// ÂùóÊï∞N„ÄÅÊúâÊïàÈïøÂ∫¶„ÄÅÂ≠óËäÇÊï∞
 				break;
 			default:
 				break;
-			}
 		}
-		Recv_DI_length = curOffSetPos;
-		for (var i = 0; i < Recv_DI_length; i++) {
-			curBufferi = precv[curBufferPos + i];
-			Recv_DI[i] = curBufferi;
+	}
+	Recv_DI_length = curOffSetPos;
+	for (var i = 0; i < Recv_DI_length; i++) {
+		curBufferi = precv[curBufferPos + i];
+		Recv_DI[i] = curBufferi;
+	}
+	curBufferPos += curOffSetPos;
+	return curBufferPos;
+};
+// Ëé∑ÂèñÊï∞ÊçÆÂüüÈïøÂ∫¶ÂèäÊï∞ÊçÆÂüüÂÜÖÂÆπ
+var GetDATAInfoFromRecvBuffer = function(curBufferPos) {
+	// TODO Auto-generated method stub
+	var curBufferi;
+	Recv_DATA_length = receive_length - 1;
+	// HEAD
+	Recv_DATA_length -= Recv_LEN_length;
+	Recv_DATA_length -= Recv_CTR_length;
+	Recv_DATA_length -= Recv_MMADR_length;
+	Recv_DATA_length -= Recv_MA_length;
+	Recv_DATA_length -= Recv_SA_length;
+	Recv_DATA_length -= 1;
+	// SER
+	Recv_DATA_length -= Recv_DI_length;
+	Recv_DATA_length -= 2;
+	// CSÔºà2‰∏™Â≠óËäÇÔºâ
+	// Âú∞ÂùÄÂüü
+	if (Recv_DATA_length > 0) {
+		for (var i = 0; i < Recv_DATA_length; i++) {
+			curBufferi = precv[curBufferPos];
+			curBufferPos++;
+			Recv_DATA[i] = curBufferi;
 		}
-		curBufferPos += curOffSetPos;
-		return curBufferPos;
-	};
-	// ªÒ»° ˝æ›”Ú≥§∂»º∞ ˝æ›”Úƒ⁄»›
-	var GetDATAInfoFromRecvBuffer = function(curBufferPos) {
-		// TODO Auto-generated method stub
-		var curBufferi;
-		Recv_DATA_length = receive_length - 1;// HEAD
-		Recv_DATA_length -= Recv_LEN_length;
-		Recv_DATA_length -= Recv_CTR_length;
-		Recv_DATA_length -= Recv_MMADR_length;
-		Recv_DATA_length -= Recv_MA_length;
-		Recv_DATA_length -= Recv_SA_length;
-		Recv_DATA_length -= 1; // SER
-		Recv_DATA_length -= Recv_DI_length;
-		Recv_DATA_length -= 2; // CS£®2∏ˆ◊÷Ω⁄£©
-		// µÿ÷∑”Ú
-		if (Recv_DATA_length > 0) {
-			for (var i = 0; i < Recv_DATA_length; i++) {
-				curBufferi = precv[curBufferPos];
-				curBufferPos++;
-				Recv_DATA[i] = curBufferi;
-			}
-		}
-		// msg = "DATA_length:" + Recv_DATA_length;
-		// mConnectionHandler.show_message(msg);
-		return curBufferPos;
-	};
-	var GetLLCFrameDATAFromFrameDATA = function() {
-		// TODO Auto-generated method stub
-		if (Recv_DI[0] == 0x3F) {
-			/*if (curRecvSer == curSendSer) {
-				IsRightPollSER = true;
-			}*/
-			if (Recv_DATA_length == 0) {
-				IsPollRecvCmd = true;
-			} else {
-				if (Recv_DATA[0] == 0x24 && Recv_DATA[1] == 0x00) {
-					IsLLCDATA = true;
-					Recv_LLC_CTR[0] = Recv_DATA[2];
-					Recv_LLC_SA_length = GetOneMAorSALen(Recv_LLC_CTR[0] & 0x07);
-					for (var i = 0; i < Recv_LLC_SA_length; i++) {
-						Recv_LLC_SA[i] = Recv_DATA[3 + i];
-					}
+	}
+	// msg = "DATA_length:" + Recv_DATA_length;
+	// mConnectionHandler.show_message(msg);
+	return curBufferPos;
+};
+var GetLLCFrameDATAFromFrameDATA = function() {
+	// TODO Auto-generated method stub
+	if (Recv_DI[0] == 0x3F) {
+		/*if (curRecvSer == curSendSer) {
+		 IsRightPollSER = true;
+		 }*/
+		if (Recv_DATA_length == 0) {
+			IsPollRecvCmd = true;
+		} else {
+			if (Recv_DATA[0] == 0x24 && Recv_DATA[1] == 0x00) {
+				IsLLCDATA = true;
+				Recv_LLC_CTR[0] = Recv_DATA[2];
+				Recv_LLC_SA_length = GetOneMAorSALen(Recv_LLC_CTR[0] & 0x07);
+				for (var i = 0; i < Recv_LLC_SA_length; i++) {
+					Recv_LLC_SA[i] = Recv_DATA[3 + i];
+				}
 
-					Recv_LLC_SER[0] = Recv_DATA[3 + Recv_LLC_SA_length];
-					GetDIInfoFromRecvDATA(4 + Recv_LLC_SA_length);
-					Recv_LLC_DATA_length = Recv_DATA_length - 4
-							- Recv_LLC_SA_length - Recv_LLC_DI_length;
-					for (var i = 0; i < Recv_LLC_DATA_length; i++) {
-						Recv_LLC_DATA[i] = Recv_DATA[4 + Recv_LLC_SA_length
-								+ Recv_LLC_DI_length + i];
-					}
-				} 
+				Recv_LLC_SER[0] = Recv_DATA[3 + Recv_LLC_SA_length];
+				GetDIInfoFromRecvDATA(4 + Recv_LLC_SA_length);
+				Recv_LLC_DATA_length = Recv_DATA_length - 4 - Recv_LLC_SA_length - Recv_LLC_DI_length;
+				for (var i = 0; i < Recv_LLC_DATA_length; i++) {
+					Recv_LLC_DATA[i] = Recv_DATA[4 + Recv_LLC_SA_length + Recv_LLC_DI_length + i];
+				}
 			}
 		}
-	};
-	var GetDIInfoFromRecvDATA = function(curBufferPos) {
-		// TODO Auto-generated method stub
-		var curBufferi;
-		var curOffSetPos = 0;
-		var curDIDataLen;
+	}
+};
+var GetDIInfoFromRecvDATA = function(curBufferPos) {
+	// TODO Auto-generated method stub
+	var curBufferi;
+	var curOffSetPos = 0;
+	var curDIDataLen;
+	curBufferi = Recv_DATA[curBufferPos + curOffSetPos];
+	curOffSetPos++;
+	IsExtend = false;
+	if ((curBufferi & 0xC0) == 0xC0) {
+		IsExtend = true;
+	}
+	if (IsExtend) {
 		curBufferi = Recv_DATA[curBufferPos + curOffSetPos];
 		curOffSetPos++;
-		IsExtend = false;
-		if ((curBufferi & 0xC0) == 0xC0) {
-			IsExtend = true;
-		}
-		if (IsExtend) {
-			curBufferi = Recv_DATA[curBufferPos + curOffSetPos];
-			curOffSetPos++;
-			switch (curBufferi & 0xF0) {
+		switch (curBufferi & 0xF0) {
 
-			case 0x60: // ∂¡–¥UC CC 66 04
-			case 0x70: // ∂¡–¥UC CC 66 04
+			case 0x60:
+			// ËØªÂÜôUC CC 66 04
+			case 0x70:
+				// ËØªÂÜôUC CC 66 04
 				curBufferi = Recv_DATA[curBufferPos + curOffSetPos];
 				curOffSetPos++;
 				break;
@@ -437,124 +462,342 @@ var GetDIInfoFromRecvBuffer = function(curBufferPos) {
 				Recv_DATA_length = curDIDataLen;
 				break;
 			case 0xA0:
-				curOffSetPos += 6; // øÈ ˝N°¢”––ß≥§∂»°¢◊÷Ω⁄ ˝
+				curOffSetPos += 6;
+				// ÂùóÊï∞N„ÄÅÊúâÊïàÈïøÂ∫¶„ÄÅÂ≠óËäÇÊï∞
 				break;
 			case 0xB0:
 				do {
 					curBufferi = Recv_DATA[curBufferPos + curOffSetPos];
 					curOffSetPos++;
 				} while ((curBufferi & 0x80) != 0);
-				curOffSetPos += 6; // øÈ ˝N°¢”––ß≥§∂»°¢◊÷Ω⁄ ˝
+				curOffSetPos += 6;
+				// ÂùóÊï∞N„ÄÅÊúâÊïàÈïøÂ∫¶„ÄÅÂ≠óËäÇÊï∞
 				break;
 			default:
 				break;
-			}
 		}
-		Recv_LLC_DI_length = curOffSetPos;
-		for (var i = 0; i < Recv_LLC_DI_length; i++) {
-			Recv_LLC_DI[i] = Recv_DATA[curBufferPos + i];
-		}
-		return curBufferPos;
-	};
-	var show_recvMessage = function() {
-		// TODO Auto-generated method stub
+	}
+	Recv_LLC_DI_length = curOffSetPos;
+	for (var i = 0; i < Recv_LLC_DI_length; i++) {
+		Recv_LLC_DI[i] = Recv_DATA[curBufferPos + i];
+	}
+	return curBufferPos;
+};
+var show_recvMessage = function() {
+	// TODO Auto-generated method stub
 
-		var hex = (Recv_HEAD).toString(16);
-		Rmsg = "÷°Õ∑:" + hex.toUpperCase() + " ";
-		Rmsg_baowen = hex.toUpperCase() + " ";
-		Rmsg += "÷°≥§:";
-		for (var i = 0; i < Recv_LEN_length; i++) {
-			hex = (Recv_LEN[i]).toString(16);
-			if (hex.length == 1) {
-				hex = "0" + hex;
-			}
-			Rmsg += hex.toUpperCase() + " ";
-			Rmsg_baowen += hex.toUpperCase() + " ";
-		}
-		Rmsg += "øÿ÷∆¬Î:";
-		for (var i = 0; i < Recv_CTR_length; i++) {
-			hex = (Recv_CTR[i] & 0xFF).toString(16);
-			if (hex.length == 1) {
-				hex = "0" + hex;
-			}
-			Rmsg += hex.toUpperCase() + " ";
-			Rmsg_baowen += hex.toUpperCase() + " ";
-		}
-		if (Recv_MMADR_length > 0) {
-			Rmsg += "∂‡º∂¿©’πµÿ÷∑±Í ∂:";
-			for (var i = 0; i < Recv_MMADR_length; i++) {
-				hex = (Recv_MMADR[i] & 0xFF).toString(16);
-				if (hex.length == 1) {
-					hex = "0" + hex;
-				}
-				Rmsg += hex.toUpperCase() + " ";
-				Rmsg_baowen += hex.toUpperCase() + " ";
-			}
-		}
-		if (Recv_MA_length > 0) {
-			Rmsg += "÷˜’æµÿ÷∑”Ú:";
-			for (var i = 0; i < Recv_MA_length; i++) {
-				hex = (Recv_MA[i] & 0xFF).toString(16);
-				if (hex.length == 1) {
-					hex = "0" + hex;
-				}
-				Rmsg += hex.toUpperCase() + " ";
-				Rmsg_baowen += hex.toUpperCase() + " ";
-			}
-		}
-		if (Recv_SA_length > 0) {
-			Rmsg += "¥”’æµÿ÷∑”Ú:";
-			for (var i = 0; i < Recv_SA_length; i++) {
-				hex = (Recv_SA[i] & 0xFF).toString(16);
-				if (hex.length == 1) {
-					hex = "0" + hex;
-				}
-				Rmsg += hex.toUpperCase() + " ";
-				Rmsg_baowen += hex.toUpperCase() + " ";
-			}
-		}
-		Rmsg += "÷°–Ú¡–∫≈:";
-		hex = (Recv_SER[0] & 0xFF).toString(16);
+	var hex = (Recv_HEAD).toString(16);
+	Rmsg = "Â∏ßÂ§¥:" + hex.toUpperCase() + " ";
+	Rmsg_baowen = hex.toUpperCase() + " ";
+	Rmsg += "Â∏ßÈïø:";
+	for (var i = 0; i < Recv_LEN_length; i++) {
+		hex = (Recv_LEN[i]).toString(16);
 		if (hex.length == 1) {
 			hex = "0" + hex;
 		}
 		Rmsg += hex.toUpperCase() + " ";
 		Rmsg_baowen += hex.toUpperCase() + " ";
-		Rmsg += " ˝æ›±Í ∂:";
-		for (var i = 0; i < Recv_DI_length; i++) {
-			hex = (Recv_DI[i] & 0xFF).toString(16);
+	}
+	Rmsg += "ÊéßÂà∂Á†Å:";
+	for (var i = 0; i < Recv_CTR_length; i++) {
+		hex = (Recv_CTR[i] & 0xFF).toString(16);
+		if (hex.length == 1) {
+			hex = "0" + hex;
+		}
+		Rmsg += hex.toUpperCase() + " ";
+		Rmsg_baowen += hex.toUpperCase() + " ";
+	}
+	if (Recv_MMADR_length > 0) {
+		Rmsg += "Â§öÁ∫ßÊâ©Â±ïÂú∞ÂùÄÊ†áËØÜ:";
+		for (var i = 0; i < Recv_MMADR_length; i++) {
+			hex = (Recv_MMADR[i] & 0xFF).toString(16);
 			if (hex.length == 1) {
 				hex = "0" + hex;
 			}
 			Rmsg += hex.toUpperCase() + " ";
 			Rmsg_baowen += hex.toUpperCase() + " ";
 		}
-		if (Recv_DATA_length > 0) {
-			Rmsg += " ˝æ›”Ú:";
-			for (var i = 0; i < Recv_DATA_length; i++) {
-				hex = (Recv_DATA[i] & 0xFF).toString(16);
-				if (hex.length == 1) {
-					hex = "0" + hex;
-				}
-				Rmsg += hex.toUpperCase() + " ";
-				Rmsg_baowen += hex.toUpperCase() + " ";
+	}
+	if (Recv_MA_length > 0) {
+		Rmsg += "‰∏ªÁ´ôÂú∞ÂùÄÂüü:";
+		for (var i = 0; i < Recv_MA_length; i++) {
+			hex = (Recv_MA[i] & 0xFF).toString(16);
+			if (hex.length == 1) {
+				hex = "0" + hex;
+			}
+			Rmsg += hex.toUpperCase() + " ";
+			Rmsg_baowen += hex.toUpperCase() + " ";
+		}
+	}
+	if (Recv_SA_length > 0) {
+		Rmsg += "‰ªéÁ´ôÂú∞ÂùÄÂüü:";
+		for (var i = 0; i < Recv_SA_length; i++) {
+			hex = (Recv_SA[i] & 0xFF).toString(16);
+			if (hex.length == 1) {
+				hex = "0" + hex;
+			}
+			Rmsg += hex.toUpperCase() + " ";
+			Rmsg_baowen += hex.toUpperCase() + " ";
+		}
+	}
+	Rmsg += "Â∏ßÂ∫èÂàóÂè∑:";
+	hex = (Recv_SER[0] & 0xFF).toString(16);
+	if (hex.length == 1) {
+		hex = "0" + hex;
+	}
+	Rmsg += hex.toUpperCase() + " ";
+	Rmsg_baowen += hex.toUpperCase() + " ";
+	Rmsg += "Êï∞ÊçÆÊ†áËØÜ:";
+	for (var i = 0; i < Recv_DI_length; i++) {
+		hex = (Recv_DI[i] & 0xFF).toString(16);
+		if (hex.length == 1) {
+			hex = "0" + hex;
+		}
+		Rmsg += hex.toUpperCase() + " ";
+		Rmsg_baowen += hex.toUpperCase() + " ";
+	}
+	if (Recv_DATA_length > 0) {
+		Rmsg += "Êï∞ÊçÆÂüü:";
+		for (var i = 0; i < Recv_DATA_length; i++) {
+			hex = (Recv_DATA[i] & 0xFF).toString(16);
+			if (hex.length == 1) {
+				hex = "0" + hex;
+			}
+			Rmsg += hex.toUpperCase() + " ";
+			Rmsg_baowen += hex.toUpperCase() + " ";
 
-			}
 		}
-		Rmsg += "–£—È¬Î:";
-		for (var i = 0; i < 2; i++) {
-			hex = (Recv_FCS[i] & 0xFF).toString(16);
-			if (hex.length == 1) {
-				hex = "0" + hex;
-			}
-			Rmsg += hex.toUpperCase() + " ";
-			Rmsg_baowen += hex.toUpperCase() + " ";
+	}
+	Rmsg += "Ê†°È™åÁ†Å:";
+	for (var i = 0; i < 2; i++) {
+		hex = (Recv_FCS[i] & 0xFF).toString(16);
+		if (hex.length == 1) {
+			hex = "0" + hex;
 		}
-		
-		var t = new Date().format("yyyy-MM-dd hh:mm:ss");
-		$("#msg_recv").css("height","300px");
-		$("#msg_recv").append(t + "  " + Rmsg + "\r\n" );  
-        $("#msg_recv").append(t + "  " + Rmsg_baowen + "\r\n" ); 
-        var scrollTop = $("#msg_recv")[0].scrollHeight;  
-        $("#msg_recv").scrollTop(scrollTop); 
-	};
+		Rmsg += hex.toUpperCase() + " ";
+		Rmsg_baowen += hex.toUpperCase() + " ";
+	}
+
+	var t = new Date().format("yyyy-MM-dd hh:mm:ss");
+	$("#msg_recv").css("height", "300px");
+	$("#msg_recv").append(t + "  " + Rmsg + "\r\n");
+	$("#msg_recv").append(t + "  " + Rmsg_baowen + "\r\n");
+	var scrollTop = $("#msg_recv")[0].scrollHeight;
+	$("#msg_recv").scrollTop(scrollTop);
+};
+var AnalyseRecvMsgByDIType = function() {
+	var tempFrmDI = "";
+	if (IsLLCDATA == true) {
+		tempFrmDI = HexL2Str(Recv_LLC_DI, Recv_LLC_DI_length);
+	} else {
+		tempFrmDI = HexL2Str(Recv_DI, Recv_DI_length);
+	}
+	var strTypeAndDI = DI2DIAddr(tempFrmDI);
+	var curDIType = parseInt(strTypeAndDI.substring(0, 2), 16);
+	var curDIAddrLen = parseInt(strTypeAndDI.substring(2, 4), 16);
+	var strFrmDIValue = strTypeAndDI.substring(4, 4 + curDIAddrLen);
+	//console.log(curDIType + " " + curDIAddrLen + " " + strFrmDIValue);
+	var curDIValue = 0;
+	var curDIByteValue;
+	for (var i = 0; i < curDIAddrLen; i += 2) {
+		curDIByteValue = parseInt(strFrmDIValue.substring(i, i + 2), 16);
+		var templen = (curDIAddrLen - i - 2) / 2;
+		var tempvalue;
+		if (templen >= 1) {
+			tempvalue = curDIByteValue << (templen * 8);
+		} else {
+			tempvalue = curDIByteValue;
+		}
+		curDIValue += tempvalue;
+	}
+	switch(curDIType) {
+		case 0:
+			AnalyseRx_NewFrame_Special(curDIValue);
+			break;
+		case 1:
+			// AnalyseRx_NewFrame_Bit(StrParame, NewFramePara, curDIValue);
+			break;
+		case 2:
+			// AnalyseRx_NewFrame_Byte(StrParame, NewFramePara, curDIValue);
+			break;
+		case 3:
+			//  AnalyseRx_NewFrame_Bytes(StrParame, NewFramePara, curDIValue);
+			break;
+		case 4:
+			// AnalyseRx_NewFrame_Bytes_Addrs(StrParame, NewFramePara, curDIValue);
+			break;
+		case 5:
+			//AnalyseRx_NewFrame_Bytes_Block(StrParame, tempFrmDI);
+			break;
+		default:
+
+			break;
+	}
+};
+//DIËΩ¨ÂåñËá≥DIType + DIAddrLen + DIAddr + DIExtra
+var DI2DIAddr = function(strDI) {
+	alert(strDI);
+	var curDIType = 0;
+	//DIÊìç‰ΩúÁ±ªÂûã
+	var curDIAddrLen = 0;
+	//DIÂú∞ÂùÄÂüüÁöÑÈïøÂ∫¶
+
+	var curDILen = strDI.length;
+	var strDIAddr = "";
+	//ËøîÂõûÁöÑDIType + DIAddrLen + DIAddr + DIExtra
+	var curDIAddrNum = 0;
+	//DIAddrÁöÑÂÄº
+	var curDIValue;
+	//ÂΩìÂâç‰ªéDI‰∏≠Ëß£ÊûêÂá∫ÁöÑÂÄº
+
+	var IsExtend = false;
+	//ÊòØÂê¶ÊúâÊâ©Â±ï
+
+	if (curDILen == 0) {
+		curDIAddrNum = 1;
+		strDIAddr = IntToHex(curDIType, 2) + IntToHex(curDIAddrNum, 2) + "00";
+		return strDIAddr;
+	}
+
+	if (curDILen % 2) {
+		strDI = "0" + strDI;
+		curDILen++;
+	}
+
+	curDIValue = parseInt(strDI.substring(0, 2), 16);
+	curDIType = curDIValue >> 6;
+	curDIValue = curDIValue & 0x3F;
+	curDIAddrLen += 2;
+	//2
+
+	switch(curDIType) {
+		case 0:
+			curDIAddrNum += curDIValue;
+			break;
+		case 1:
+			curDIAddrNum += curDIValue;
+			break;
+		case 2:
+			curDIAddrNum += curDIValue;
+			break;
+		default:
+			curDIAddrNum += curDIValue;
+			IsExtend = true;
+			break;
+	}
+	if (IsExtend && (curDILen > curDIAddrLen + 1)) {
+		curDIValue = parseInt(strDI.substring(2, 4), 16);
+		curDIType = curDIValue >> 5;
+		curDIValue = curDIValue & 0x1F;
+		curDIAddrLen += 2;
+		//4
+
+		switch(curDIType) {
+			case 0:
+				curDIAddrNum += curDIValue * 0x40;
+				break;
+			case 1:
+				curDIAddrNum += curDIValue * 0x40;
+				break;
+			case 2:
+				curDIAddrNum += curDIValue * 0x40;
+				break;
+			case 3:
+				curDIAddrNum += curDIValue * 0x40;
+				break;
+			case 4:
+			case 5:
+				curDIAddrNum += (curDIValue & 0x0F) * 0x40;
+				if ((curDIValue & 0x10) && curDILen > curDIAddrLen + 1) {
+					curDIValue = parseInt(strDI.substring(4, 6), 16);
+					curDIAddrLen += 2;
+					//6
+					curDIAddrNum += (curDIValue & 0x7F) << (10 + (curDIAddrLen / 2 - 3) * 7);
+
+					while (curDIValue & 0x80) {
+						if (curDILen > curDIAddrLen + 1) {
+							curDIValue = parseInt(strDI.substring(curDIAddrLen, curDIAddrLen + 2), 16);
+							;
+						} else {
+							curDIValue = 0;
+						}
+						curDIAddrLen += 2;
+						//8
+						curDIAddrNum += (curDIValue & 0x7F) << (10 + (curDIAddrLen / 2 - 3) * 7);
+					}
+				}
+				break;
+			default:
+				break;
+		}
+	}
+
+	curDIValue = curDIAddrNum & 0xFF;
+	strDIAddr += IntToHex(curDIValue, 2);
+
+	while (curDIAddrNum >> 8 > 0) {
+		curDIAddrNum >>= 8;
+		curDIValue = curDIAddrNum & 0xFF;
+		strDIAddr = IntToHex(curDIValue, 2) + strDIAddr;
+	}
+	strDI = strDI.substring(curDIAddrLen, curDILen);
+
+	curDIAddrLen = strDIAddr.length;
+	//strDIAddr = varToHex(curDIType,2) + varToHex(curDIAddrLen,2) + strDIAddr;
+	strDIAddr = IntToHex(curDIType, 2) + IntToHex(curDIAddrLen, 2) + strDIAddr + strDI;
+	return strDIAddr;
+};
+//ÁâπÊÆäÂëΩ‰ª§
+var AnalyseRx_NewFrame_Special = function(curDIValue) {
+
+	switch(curDIValue) {
+		case 0x3f:
+			AnalyseRx_NewFrame_Special_PollInt();
+			break;
+		default:
+			break;
+	}
+
+};
+//‰∏≠Êñ≠‰∫ã‰ª∂
+var AnalyseRx_NewFrame_Special_PollInt = function() {
+	var strEventData = HexL2Str(Recv_DATA, Recv_DATA_length);
+	var EventType = parseInt(strEventData.substring(0, 4), 16);
+	var NewRecordData = strEventData.substring(4);
+	console.log(NewRecordData);
+	switch(EventType) {
+		case 0x5100:
+			DealNewRecord(NewRecordData);
+			break;
+		default:
+			break;
+	}
+};
+var DealNewRecord = function(NewRecordData){
+	var newRecord  = new _EventRecord();
+	var alllen = NewRecordData.length;
+	newRecord.recordtype   = parseInt(NewRecordData.substring(0,2),16);
+	newRecord.time         = StringByteTurnOver(NewRecordData.substring(2,14));
+	newRecord.uc           = StringByteTurnOver(NewRecordData.substring(14,22));
+	newRecord.cc           = StringByteTurnOver(NewRecordData.substring(22,86));
+	newRecord.eventtype    = NewRecordData.substring(86,90);
+	newRecord.effectivelen = parseInt(NewRecordData.substring(90,92),16);
+	newRecord.effectivedata= StringByteTurnOver(NewRecordData.substring(alllen - (newRecord.effectivelen*2)));
+	console.log(newRecord.recordtype + ":" + newRecord.time + ":" + newRecord.uc + ":" +newRecord.cc + ":" +
+	newRecord.eventtype + ":" + newRecord.effectivelen + ":" +newRecord.effectivedata);
+	var strrecordtype = "";
+	var str = "ÁÅ´Ë≠¶";
+	console.log(str);
+	var huojing = encodeURI(str);
+	console.log(huojing);
+	switch(newRecord.recordtype)
+	{
+		case 0: strrecordtype = huojing;
+		break;
+	}
+
+	console.log(strrecordtype + "********" +decodeURI(strrecordtype));
+	$("#send_flag").css({"color":"#FF0000","font-size":"30px"});
+	$("#send_flag").text(decodeURI(strrecordtype));
+	
+};
